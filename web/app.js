@@ -224,29 +224,63 @@ async function renderDataView() {
 function renderRawRows(data) {
   const body = $("#dataBody");
   body.innerHTML = "";
-  const card = el("div", "card");
-  const head = el("div", "card-head");
-  head.appendChild(el("h3", "", "Attendance data pulled from Google Sheets"));
-  head.appendChild(el("span", "meta", data.row_count + " rows · " + (data.month || "")));
-  card.appendChild(head);
-  const table = document.createElement("table");
-  table.appendChild(theader(["Employee ID", "Name", "Perks", "Department/Team", "Date", "Weekdays", "Clock In", "Clock Out"]));
-  const tbody = document.createElement("tbody");
+
+  const teamOrder = ["Exabyting Office", "Exabyting Remote", "bKash"];
+  const groups = {};
   for (const r of data.rows) {
-    const tr = el("tr");
-    tr.appendChild(el("td", "", r.emp_id));
-    tr.appendChild(el("td", "", r.name));
-    tr.appendChild(el("td", "", r.perk));
-    tr.appendChild(el("td", "", r.team));
-    tr.appendChild(el("td", "", r.date));
-    tr.appendChild(el("td", "", r.weekday));
-    tr.appendChild(el("td", "", r.clock_in));
-    tr.appendChild(el("td", "", r.clock_out));
-    tbody.appendChild(tr);
+    if (!teamOrder.includes(r.team)) continue;
+    if (!groups[r.team]) groups[r.team] = [];
+    groups[r.team].push(r);
   }
-  table.appendChild(tbody);
-  card.appendChild(table);
-  body.appendChild(card);
+
+  for (const team of teamOrder) {
+    const members = groups[team] || [];
+    const card = el("div", "card");
+    const head = el("div", "card-head card-head-toggle");
+    const chevron = el("span", "chevron", "▸");
+    head.appendChild(chevron);
+    head.appendChild(el("h3", "", team));
+    head.appendChild(el("span", "meta", members.length + " rows · click to expand"));
+    head.addEventListener("click", () => toggleCard(card));
+    card.appendChild(head);
+
+    const wrap = el("div", "collapsible");
+    wrap.style.display = "none";
+    const table = document.createElement("table");
+    table.appendChild(theader(["Employee ID", "Name", "Perks", "Department/Team", "Date", "Weekdays", "Clock In", "Clock Out", "Status"]));
+    const tbody = document.createElement("tbody");
+    for (const r of members) {
+      const tr = el("tr");
+      tr.appendChild(el("td", "", r.emp_id));
+      tr.appendChild(el("td", "", r.name));
+      tr.appendChild(el("td", "", r.perk));
+      tr.appendChild(el("td", "", r.team));
+      tr.appendChild(el("td", "", r.date));
+      tr.appendChild(el("td", "", r.weekday));
+      tr.appendChild(el("td", "", r.clock_in));
+      tr.appendChild(el("td", "", r.clock_out));
+      tr.appendChild(el("td", "status " + statusClass(r.status), r.status));
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    card.appendChild(wrap);
+    body.appendChild(card);
+  }
+}
+
+function statusClass(status) {
+  if (status === "Late") return "st-late";
+  if (status === "On Time") return "st-ok";
+  return "st-absent";
+}
+
+function toggleCard(card) {
+  const wrap = card.querySelector(".collapsible");
+  const chevron = card.querySelector(".chevron");
+  const open = wrap.style.display !== "none";
+  wrap.style.display = open ? "none" : "";
+  chevron.textContent = open ? "▸" : "▾";
 }
   function renderTeamData(container, employees) {
   container.innerHTML = "";
@@ -308,8 +342,8 @@ function renderRawRows(data) {
 function theader(cols) {
   const thead = document.createElement("thead");
   const tr = el("tr");
-  cols.forEach((c, i) => {
-    const th = el("th", i > 0 ? "num" : "", c);
+  cols.forEach((c) => {
+    const th = el("th", "", c);
     tr.appendChild(th);
   });
   thead.appendChild(tr);

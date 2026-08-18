@@ -154,9 +154,23 @@ def raw_rows(employees):
                     "weekday": d["weekday"],
                     "clock_in": d["clock_in"],
                     "clock_out": d["clock_out"],
+                    "status": _attendance_status(d["clock_in"], d["clock_out"]),
                 }
             )
     return rows
+
+
+def _attendance_status(clock_in, clock_out):
+    ci = (clock_in or "").strip()
+    co = (clock_out or "").strip()
+    if not ci or not co:
+        return "Absent"
+    try:
+        parts = ci.split(":")
+        minutes = int(parts[0]) * 60 + int(parts[1])
+    except (ValueError, IndexError):
+        return "Absent"
+    return "Late" if minutes > 600 else "On Time"
 
 
 def _is_onsite(emp):
