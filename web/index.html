@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PX Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">PX</div>
+      <div class="brand-name">
+        <h1>PX Dashboard</h1>
+        <span>People Experience Team</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label">Reports</div>
+      <button class="nav-item active" data-view="report">Sailor's Report</button>
+      <button class="nav-item" data-view="data">Attendance Data</button>
+    </nav>
+
+    <div class="sidebar-block">
+      <div class="nav-label">Months (from Google Sheet)</div>
+      <ul id="tabList" class="tab-list"></ul>
+    </div>
+
+    <div class="sidebar-footer">
+      <div id="sheetStatus" class="sheet-status"></div>
+      <button id="refreshBtn" class="btn btn-ghost" title="Pull latest data from Google Sheets">Refresh</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <section id="configView" class="view hidden">
+      <h2>Connect your Google Sheet</h2>
+      <p class="muted">Paste the link to the attendance spreadsheet. It must be shared as <b>Anyone with the link &rarr; Viewer</b>.</p>
+      <div class="config-row">
+        <input id="sheetUrl" type="text" placeholder="https://docs.google.com/spreadsheets/d/..." />
+        <button id="connectBtn" class="btn btn-primary">Connect</button>
+      </div>
+      <p id="configMsg" class="msg"></p>
+    </section>
+
+    <section id="reportView" class="view">
+      <div class="view-head">
+        <div>
+          <h2>Sailor's Report</h2>
+          <p id="reportSub" class="muted">Select a month from the sidebar.</p>
+        </div>
+      </div>
+      <div id="newTabsBanner" class="banner hidden"></div>
+      <div class="empty">Sailor's Report is under revision — calculations will be added back later.</div>
+    </section>
+
+    <section id="dataView" class="view hidden">
+      <div class="view-head">
+        <div>
+          <h2>Attendance Data</h2>
+          <p id="dataSub" class="muted">Select a month from the sidebar.</p>
+        </div>
+      </div>
+      <div id="dataBody" class="report-body"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

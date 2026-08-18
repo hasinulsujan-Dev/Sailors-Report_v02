@@ -1,0 +1,30 @@
+{
+  "July Attendance 2026": {
+    "type": "attendance",
+    "month": "2026-07"
+  },
+  "June Attendance 2026": {
+    "type": "attendance",
+    "month": "2026-06"
+  },
+  "May Attendance 2026": {
+    "type": "attendance",
+    "month": "2026-05"
+  },
+  "April Attendance 2026": {
+    "type": "attendance",
+    "month": "2026-04"
+  },
+  "March Attendance 2026": {
+    "type": "attendance",
+    "month": "2026-03"
+  },
+  "February Attendance 2026": {
+    "type": "attendance",
+    "month": "2026-02"
+  },
+  "January Attendance 2026": {
+    "type": "attendance",
+    "month": "2026-01"
+  }
+}
