@@ -155,9 +155,64 @@ def raw_rows(employees):
                     "clock_in": d["clock_in"],
                     "clock_out": d["clock_out"],
                     "status": _attendance_status(d["clock_in"], d["clock_out"]),
+                    "late_hrs": _late_hours(d["clock_in"]),
+                    "work_hrs": _work_hours(d["clock_in"], d["clock_out"]),
+                    "below_8": _duration_flag(d["clock_in"], d["clock_out"], 8),
+                    "below_9": _duration_flag(d["clock_in"], d["clock_out"], 9),
+                    "above_9": _duration_flag(d["clock_in"], d["clock_out"], 9, above=True),
                 }
             )
     return rows
+
+
+def _to_minutes(text):
+    text = (text or "").strip()
+    if not text:
+        return None
+    try:
+        parts = text.split(":")
+        return int(parts[0]) * 60 + int(parts[1])
+    except (ValueError, IndexError):
+        return None
+
+
+def _work_minutes(clock_in, clock_out):
+    ci = _to_minutes(clock_in)
+    co = _to_minutes(clock_out)
+    if ci is None or co is None:
+        return None
+    if co < ci:
+        co += 24 * 60
+    return co - ci
+
+
+def _duration_flag(clock_in, clock_out, hours, above=False):
+    mins = _work_minutes(clock_in, clock_out)
+    if mins is None:
+        return ""
+    limit = hours * 60
+    if above:
+        return "Yes" if mins > limit else "No"
+    return "Yes" if mins < limit else "No"
+
+
+def _late_hours(clock_in):
+    minutes = _to_minutes(clock_in)
+    if minutes is None:
+        return ""
+    if minutes <= 600:
+        return "0:00"
+    diff = minutes - 600
+    h, m = divmod(diff, 60)
+    return "{}:{:02d}".format(h, m)
+
+
+def _work_hours(clock_in, clock_out):
+    diff = _work_minutes(clock_in, clock_out)
+    if diff is None:
+        return ""
+    h, m = divmod(diff, 60)
+    return "{}:{:02d}".format(h, m)
 
 
 def _attendance_status(clock_in, clock_out):

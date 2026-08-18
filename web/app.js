@@ -247,7 +247,15 @@ function renderRawRows(data) {
     const wrap = el("div", "collapsible");
     wrap.style.display = "none";
     const table = document.createElement("table");
-    table.appendChild(theader(["Employee ID", "Name", "Perks", "Department/Team", "Date", "Weekdays", "Clock In", "Clock Out", "Status"]));
+    table.appendChild(theader([
+      "Employee ID", "Name", "Perks", "Department/Team", "Date", "Weekdays",
+      { label: "Clock In", num: true },
+      { label: "Clock Out", num: true },
+      "Status",
+      { label: "Late for Hrs.", num: true },
+      { label: "Work Time per day", num: true },
+      "Below 8 Hrs", "Below 9 Hrs", "Above 9 Hrs",
+    ]));
     const tbody = document.createElement("tbody");
     for (const r of members) {
       const tr = el("tr");
@@ -257,9 +265,14 @@ function renderRawRows(data) {
       tr.appendChild(el("td", "", r.team));
       tr.appendChild(el("td", "", r.date));
       tr.appendChild(el("td", "", r.weekday));
-      tr.appendChild(el("td", "", r.clock_in));
-      tr.appendChild(el("td", "", r.clock_out));
+      tr.appendChild(el("td", "num", r.clock_in));
+      tr.appendChild(el("td", "num", r.clock_out));
       tr.appendChild(el("td", "status " + statusClass(r.status), r.status));
+      tr.appendChild(el("td", "num" + (r.late_hrs && r.late_hrs !== "0:00" ? " flag-danger" : ""), r.late_hrs ? r.late_hrs + " hrs" : ""));
+      tr.appendChild(el("td", "num" + (r.work_hrs ? "" : " st-absent"), r.work_hrs ? r.work_hrs + " hrs" : ""));
+      tr.appendChild(el("td", flagClass(r.below_8), r.below_8 || ""));
+      tr.appendChild(el("td", flagClass(r.below_9), r.below_9 || ""));
+      tr.appendChild(el("td", flagClass(r.above_9), r.above_9 || ""));
       tbody.appendChild(tr);
     }
     table.appendChild(tbody);
@@ -267,6 +280,12 @@ function renderRawRows(data) {
     card.appendChild(wrap);
     body.appendChild(card);
   }
+}
+
+function flagClass(flag) {
+  if (flag === "Yes") return "flag-danger";
+  if (flag === "No") return "flag-ok";
+  return "st-absent";
 }
 
 function statusClass(status) {
@@ -343,8 +362,9 @@ function theader(cols) {
   const thead = document.createElement("thead");
   const tr = el("tr");
   cols.forEach((c) => {
-    const th = el("th", "", c);
-    tr.appendChild(th);
+    const label = typeof c === "string" ? c : c.label;
+    const cls = typeof c === "string" ? "" : (c.num ? "num" : "");
+    tr.appendChild(el("th", cls, label));
   });
   thead.appendChild(tr);
   return thead;
