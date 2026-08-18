@@ -2,6 +2,7 @@ const state = {
   status: null,
   currentTab: null,
   reportMonth: null,
+  overviewMonths: [],
   view: "report",
 };
 
@@ -195,7 +196,138 @@ async function renderView() {
 }
 
 async function renderReportView() {
-  $("#reportSub").textContent = "Under revision — calculations will be added back.";
+  $("#reportSub").textContent = "Overview across months · latest month shown by default";
+  const ovWrap = $("#overviewWrap");
+  ovWrap.innerHTML = '<div class="spin"></div>';
+  try {
+    const ov = await api("/api/overview");
+    state.overviewMonths = ov.months;
+    renderOverviewTable(ov);
+    renderMonthTabs(ov.months);
+    const month = (state.reportMonth && ov.months.includes(state.reportMonth)) ? state.reportMonth : ov.months[0];
+    state.reportMonth = month;
+    renderMonthDetail(month);
+  } catch (e) {
+    ovWrap.innerHTML = '<div class="empty">' + escapeHtml(e.message) + "</div>";
+    $("#monthTabs").innerHTML = "";
+    $("#reportBody").innerHTML = "";
+  }
+}
+
+function renderOverviewTable(ov) {
+  const wrap = $("#overviewWrap");
+  wrap.innerHTML = "";
+  const card = el("div", "card");
+  const head = el("div", "card-head");
+  head.appendChild(el("h3", "", "Sailor's Report — Overview (criteria × month)"));
+  head.appendChild(el("span", "meta", "Count of flagged employees per criterion"));
+  card.appendChild(head);
+
+  const cols = ["#", "Criterion", "Rule", "Scope"];
+  ov.months.forEach((m) => cols.push({ label: m, num: true }));
+  const table = document.createElement("table");
+  table.appendChild(theader(cols));
+  const tbody = document.createElement("tbody");
+  for (const c of ov.criteria) {
+    const tr = el("tr");
+    tr.appendChild(el("td", "num", String(c.n)));
+    tr.appendChild(el("td", "", c.title));
+    tr.appendChild(el("td", "", c.rule));
+    tr.appendChild(el("td", "", c.scope));
+    for (const m of ov.months) {
+      const val = c.counts[m];
+      if (val === null) {
+        tr.appendChild(el("td", "num st-absent", "—"));
+      } else if (m === ov.months[0]) {
+        tr.appendChild(el("td", "num " + (val > 0 ? "flag-danger" : ""), String(val)));
+      } else {
+        tr.appendChild(el("td", "num", String(val)));
+      }
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  card.appendChild(table);
+  wrap.appendChild(card);
+}
+
+function renderMonthTabs(months) {
+  const wrap = $("#monthTabs");
+  wrap.innerHTML = "";
+  for (const m of months) {
+    const btn = el("button", "month-tab" + (m === state.reportMonth ? " active" : ""), m);
+    btn.addEventListener("click", () => selectMonth(m));
+    wrap.appendChild(btn);
+  }
+}
+
+function selectMonth(month) {
+  state.reportMonth = month;
+  renderMonthTabs(mappedMonthsFromOverview());
+  renderMonthDetail(month);
+}
+
+function mappedMonthsFromOverview() {
+  return (state.overviewMonths || []);
+}
+
+async function renderMonthDetail(month) {
+  const body = $("#reportBody");
+  const st = state.status;
+  const tab = (st.tabs || []).find((t) => t.mapped && t.type === "attendance" && t.month === month);
+  body.innerHTML = '<div class="spin"></div>';
+  if (!tab) {
+    body.innerHTML = '<div class="empty">No attendance tab mapped for ' + month + '.</div>';
+    return;
+  }
+  try {
+    const rep = await api("/api/report?tab=" + encodeURIComponent(tab.name));
+    renderReportDetail(rep);
+  } catch (e) {
+    body.innerHTML = '<div class="empty">' + escapeHtml(e.message) + "</div>";
+  }
+}
+
+function renderReportDetail(rep) {
+  const body = $("#reportBody");
+  body.innerHTML = "";
+  const title = el("div", "month-data-title", "Month detail — " + (rep.month || ""));
+  body.appendChild(title);
+
+  const sectionsById = {};
+  for (const s of rep.sections) sectionsById[s.id] = s;
+
+  for (const c of rep.overview) {
+    const card = el("div", "card");
+    const head = el("div", "card-head");
+    head.appendChild(el("h3", "", c.n + ". " + c.title));
+    head.appendChild(el("span", "meta", [c.rule, c.scope].filter(Boolean).join(" · ")));
+    card.appendChild(head);
+    if (c.computable) {
+      const s = sectionsById[c.id];
+      if (!s || !s.rows.length) {
+        card.appendChild(el("div", "no-rows", "No one flagged. All clear."));
+      } else {
+        const table = document.createElement("table");
+        table.appendChild(theader(["#", "Employee", "ID", "Team", "Value"]));
+        const tbody = document.createElement("tbody");
+        s.rows.forEach((r, i) => {
+          const tr = el("tr");
+          tr.appendChild(el("td", "num", String(i + 1)));
+          tr.appendChild(el("td", "", r.name));
+          tr.appendChild(el("td", "", r.id));
+          tr.appendChild(el("td", "", r.team));
+          tr.appendChild(el("td", "num flag-danger", String(r.value)));
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        card.appendChild(table);
+      }
+    } else {
+      card.appendChild(el("div", "no-rows awaiting", "Awaiting data — " + c.source));
+    }
+    body.appendChild(card);
+  }
 }
 
 async function renderDataView() {

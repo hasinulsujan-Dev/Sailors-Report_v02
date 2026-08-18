@@ -95,6 +95,32 @@ def handle_get(handler, parsed):
         )
         return
 
+    if path == "/api/overview":
+        settings = load_settings()
+        tabs_cfg = load_tabs()
+        try:
+            tabs = sheets.list_tabs(settings["spreadsheet_id"])
+        except sheets.SheetsError as e:
+            _error(handler, str(e), 502)
+            return
+        month_counts = {}
+        for name, mapping in tabs_cfg.items():
+            if mapping.get("type") != "attendance" or not mapping.get("month"):
+                continue
+            gid = next((t["gid"] for t in tabs if t["name"] == name), None)
+            if gid is None:
+                continue
+            try:
+                rows = sheets.fetch_tab_rows(settings["spreadsheet_id"], gid)
+                employees = report_mod.parse_attendance(rows)
+                rep = report_mod.build_report(employees)
+                month_counts[mapping["month"]] = {s["id"]: len(s["rows"]) for s in rep["sections"]}
+            except (sheets.SheetsError, report_mod.ReportError):
+                continue
+        ov = report_mod.build_overview_matrix(month_counts)
+        _json(handler, ov)
+        return
+
     if path == "/api/report":
         params = parse_qs(parsed.query)
         tab_name = (params.get("tab") or [""])[0]

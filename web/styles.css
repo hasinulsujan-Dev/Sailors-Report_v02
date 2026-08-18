@@ -22,12 +22,15 @@ body {
   background: var(--bg);
   color: var(--ink);
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
   width: 280px;
   flex-shrink: 0;
+  height: 100vh;
+  overflow-y: auto;
   background: var(--sidebar);
   color: var(--sidebar-ink);
   display: flex;
@@ -119,7 +122,7 @@ body {
 }
 .sheet-status { font-size: 11px; line-height: 1.4; word-break: break-all; }
 
-.content { flex: 1; padding: 28px 32px; overflow: auto; }
+.content { flex: 1; padding: 28px 32px; overflow-y: auto; height: 100vh; }
 .view h2 { margin: 0 0 4px; font-size: 22px; }
 .view-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 .muted { color: var(--muted); font-size: 13px; margin: 0; }
@@ -228,7 +231,10 @@ td.st-absent { color: var(--muted); }
 .card-head-toggle { cursor: pointer; user-select: none; }
 .card-head-toggle:hover { background: #f0f4fb; }
 .chevron { font-size: 13px; color: var(--muted); width: 14px; transition: transform .15s ease; }
-.collapsible { overflow: hidden; }
+.collapsible { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+.collapsible::-webkit-scrollbar { height: 10px; }
+.collapsible::-webkit-scrollbar-thumb { background: #c4cddb; border-radius: 6px; }
+.collapsible::-webkit-scrollbar-track { background: #f0f3f8; }
 .card-head h3 { margin: 0; font-size: 14px; }
 .card-head .meta { font-size: 12px; color: var(--muted); }
 

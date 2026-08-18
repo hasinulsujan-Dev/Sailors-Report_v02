@@ -228,6 +228,29 @@ def _attendance_status(clock_in, clock_out):
     return "Late" if minutes > 600 else "On Time"
 
 
+def build_overview_matrix(month_counts):
+    months = sorted(month_counts.keys(), reverse=True)
+    criteria = []
+    for c in PRD_CRITERIA:
+        entry = {
+            "n": c["n"],
+            "id": c["id"],
+            "title": c["title"],
+            "rule": c["rule"],
+            "scope": c["scope"],
+            "computable": c["computable"],
+            "source": c["source"],
+            "counts": {},
+        }
+        for m in months:
+            if c["computable"]:
+                entry["counts"][m] = month_counts[m].get(c["section"], 0)
+            else:
+                entry["counts"][m] = None
+        criteria.append(entry)
+    return {"months": months, "criteria": criteria}
+
+
 def _is_onsite(emp):
     team = emp["team"].lower()
     perk = emp["perk"].lower()
