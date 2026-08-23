@@ -236,17 +236,25 @@ def build_overview_matrix(month_counts):
             "n": c["n"],
             "id": c["id"],
             "title": c["title"],
-            "rule": c["rule"],
-            "scope": c["scope"],
             "computable": c["computable"],
-            "source": c["source"],
-            "counts": {},
+            "values": {},
+            "mom": {},
         }
-        for m in months:
+        for i, m in enumerate(months):
             if c["computable"]:
-                entry["counts"][m] = month_counts[m].get(c["section"], 0)
+                val = month_counts[m].get(c["section"], 0)
+                entry["values"][m] = val
+                if i + 1 < len(months):
+                    prev = months[i + 1]
+                    prev_val = month_counts[prev].get(c["section"], 0)
+                    delta = val - prev_val
+                    pct = round((delta / prev_val) * 100, 1) if prev_val else None
+                    entry["mom"][m] = {"delta": delta, "pct": pct, "trend": "up" if delta > 0 else ("down" if delta < 0 else "flat")}
+                else:
+                    entry["mom"][m] = None
             else:
-                entry["counts"][m] = None
+                entry["values"][m] = None
+                entry["mom"][m] = None
         criteria.append(entry)
     return {"months": months, "criteria": criteria}
 
@@ -262,23 +270,27 @@ def _is_onsite(emp):
 
 
 PRD_CRITERIA = [
-    {"n": 1, "id": "meal", "title": "Enjoyed Late / Unrequested Meal", "rule": "> 3 times", "scope": "", "computable": False, "section": None, "source": "Meal sheet — not linked yet"},
-    {"n": 2, "id": "double_lunch", "title": "Double lunch booking (bKash & Exabyting)", "rule": "", "scope": "", "computable": False, "section": None, "source": "Lunch sheet — not linked yet"},
-    {"n": 3, "id": "late_checkin", "title": "Late Check-in Count", "rule": "> 3 times", "scope": "Onsite only", "computable": True, "section": "late_checkin", "source": "Attendance sheet"},
-    {"n": 4, "id": "partial_attendance", "title": "Partial Attendance Count", "rule": "> 3 times, < 8 hours", "scope": "Onsite only", "computable": True, "section": "partial_attendance", "source": "Attendance sheet"},
-    {"n": 5, "id": "early_checkout", "title": "Early Check Out", "rule": "> 3 times", "scope": "Onsite only", "computable": True, "section": "early_checkout", "source": "Attendance sheet"},
-    {"n": 6, "id": "avg_hours_below_9", "title": "Average Daily Office Hours", "rule": "< 9 hours", "scope": "Onsite only", "computable": True, "section": "avg_hours_below_9", "source": "Attendance sheet"},
-    {"n": 7, "id": "avg_hours_above_9", "title": "Average Daily Office Hours", "rule": "> 9 hours", "scope": "Onsite only", "computable": True, "section": "avg_hours_above_9", "source": "Attendance sheet"},
-    {"n": 8, "id": "home_office", "title": "Home Office Count", "rule": "> 2 times", "scope": "Onsite only", "computable": False, "section": None, "source": "Not linked yet"},
-    {"n": 9, "id": "transport_allowance", "title": "Transport allowance misuse", "rule": "", "scope": "", "computable": False, "section": None, "source": "Transport sheet — not linked yet"},
-    {"n": 10, "id": "dormitory", "title": "Dormitory low utilization", "rule": "< 80%", "scope": "", "computable": False, "section": None, "source": "Dormitory sheet — not linked yet"},
-    {"n": 11, "id": "exanest_misuse", "title": "ExaNest Misuse", "rule": "", "scope": "", "computable": False, "section": None, "source": "Not linked yet"},
-    {"n": 12, "id": "transport_utilization", "title": "Transport Utilization", "rule": "< 80% only", "scope": "", "computable": False, "section": None, "source": "Transport sheet — not linked yet"},
-    {"n": 13, "id": "non_cooperative", "title": "Non-Cooperative Behaviour", "rule": "", "scope": "", "computable": False, "section": None, "source": "Not linked yet"},
-    {"n": 14, "id": "leave_fingerprint", "title": "Leave Count mismatch (Aladin vs fingerprint device)", "rule": "Count", "scope": "Non bKash", "computable": False, "section": None, "source": "Leave sheet — not linked yet"},
-    {"n": 15, "id": "leave_bkash", "title": "Leave Count mismatch (Aladin vs bKash Timecard)", "rule": "Count", "scope": "bKash only", "computable": False, "section": None, "source": "Leave sheet — not linked yet"},
-    {"n": 16, "id": "extra_working_days", "title": "Extra Working Days Count", "rule": "> 2 / Month", "scope": "", "computable": False, "section": None, "source": "Not linked yet"},
-    {"n": 17, "id": "recharge", "title": "Recharge misuse", "rule": "", "scope": "", "computable": False, "section": None, "source": "Not linked yet"},
+    {"n": 1, "id": "meal_late", "title": "Enjoyed Late / Unrequested Meal", "rule": "> 3 times", "scope": "", "computable": False, "section": None},
+    {"n": 2, "id": "double_lunch", "title": "Double lunch booking (bKash & Exabyting)", "rule": "", "scope": "", "computable": False, "section": None},
+    {"n": 3, "id": "late_checkin", "title": "Late Check in Count", "rule": "> 3 times", "scope": "Only onsite employees", "computable": True, "section": "late_checkin"},
+    {"n": 4, "id": "partial_attendance", "title": "Partial Attendance Count", "rule": "> 3 times, < 8 hours", "scope": "Only onsite employees", "computable": True, "section": "partial_attendance"},
+    {"n": 5, "id": "early_checkout", "title": "Early Check Out", "rule": "> 3 times", "scope": "Only onsite employees", "computable": True, "section": "early_checkout"},
+    {"n": 6, "id": "avg_hours_below_9", "title": "Average Daily Office Hours", "rule": "< 9 hours", "scope": "Only onsite employees", "computable": True, "section": "avg_hours_below_9"},
+    {"n": 7, "id": "avg_hours_above_9", "title": "Average Daily Office Hours", "rule": "> 9 hours", "scope": "Only onsite employees", "computable": True, "section": "avg_hours_above_9"},
+    {"n": 8, "id": "home_office", "title": "Home Office Count", "rule": "> 2 times", "scope": "Only onsite employees", "computable": False, "section": None},
+    {"n": 9, "id": "transport_allowance", "title": "Transport allowance (Misuse description, if any)", "rule": "", "scope": "", "computable": False, "section": None},
+    {"n": 10, "id": "dormitory", "title": "Dormitory low utilization", "rule": "< 80%", "scope": "", "computable": False, "section": None},
+    {"n": 11, "id": "exanest_misuse", "title": "ExaNest Misuse", "rule": "", "scope": "", "computable": False, "section": None},
+    {"n": 12, "id": "transport_utilization", "title": "Transport Utilization", "rule": "< 80% only", "scope": "", "computable": False, "section": None},
+    {"n": 13, "id": "non_cooperative", "title": "Non-Cooperative Behaviour", "rule": "", "scope": "", "computable": False, "section": None},
+    {"n": 14, "id": "leave_fingerprint", "title": "Leave Count mismatch with Aladin (fingerprint)", "rule": "Count", "scope": "Non bKash", "computable": False, "section": None},
+    {"n": 15, "id": "leave_bkash", "title": "Leave Count mismatch with Aladin (bKash Timecard)", "rule": "Count", "scope": "bKash only", "computable": False, "section": None},
+    {"n": 16, "id": "extra_working_days", "title": "Extra Working Days Count", "rule": "> 2 / Month", "scope": "", "computable": False, "section": None},
+    {"n": 17, "id": "recharge", "title": "Recharge (Misuse description, if any)", "rule": "", "scope": "", "computable": False, "section": None},
+    {"n": 18, "id": "it_incentive", "title": "IT incentive (Misuse description, if any)", "rule": "", "scope": "", "computable": False, "section": None},
+    {"n": 19, "id": "health", "title": "Health (Misuse description, if any)", "rule": "", "scope": "", "computable": False, "section": None},
+    {"n": 20, "id": "interview_cancellation", "title": "Interview cancellation", "rule": "> 20% months", "scope": "", "computable": False, "section": None},
+    {"n": 21, "id": "kpi_flag", "title": "KPI flag from bKash (Description)", "rule": "", "scope": "", "computable": False, "section": None},
 ]
 
 
@@ -348,10 +360,7 @@ def build_report(employees):
             "n": c["n"],
             "id": c["id"],
             "title": c["title"],
-            "rule": c["rule"],
-            "scope": c["scope"],
             "computable": c["computable"],
-            "source": c["source"],
             "status": "computed" if c["computable"] else "awaiting-data",
         }
         if c["computable"]:

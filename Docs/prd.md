@@ -4,6 +4,7 @@ In that dashboard we will have different areas
 We will start with the report setion
 Under the report, we have a subsection for the Sailor's report
 Initial Sailor's report will be created month wise data coming from different Google sheet
+Sailor's report link format is in this google sheet https://docs.google.com/spreadsheets/d/1ZngdMVM2G7c63ogmUc3a1MjUyLINILBdB6sUbf0xW60/edit?usp=sharing
 The Saior's report will contain the following:
 	Enjoyed Late / Unrequested Meal  (>3 times )
 	Double lunch booking (bKash & Exabyting)

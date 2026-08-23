@@ -219,12 +219,15 @@ function renderOverviewTable(ov) {
   wrap.innerHTML = "";
   const card = el("div", "card");
   const head = el("div", "card-head");
-  head.appendChild(el("h3", "", "Sailor's Report — Overview (criteria × month)"));
-  head.appendChild(el("span", "meta", "Count of flagged employees per criterion"));
+  head.appendChild(el("h3", "", "Sailor's Report — Monthly Overview (Criteria × Month with MoM Comparison)"));
+  head.appendChild(el("span", "meta", "Values + Month-over-Month (Δ, %) · Green = improved (fewer flagged), Red = worse"));
   card.appendChild(head);
 
-  const cols = ["#", "Criterion", "Rule", "Scope"];
-  ov.months.forEach((m) => cols.push({ label: m, num: true }));
+  const cols = ["#", "Criterion"];
+  ov.months.forEach((m) => {
+    cols.push({ label: m, num: true });
+    cols.push({ label: m + " MoM", num: true });
+  });
   const table = document.createElement("table");
   table.appendChild(theader(cols));
   const tbody = document.createElement("tbody");
@@ -232,16 +235,26 @@ function renderOverviewTable(ov) {
     const tr = el("tr");
     tr.appendChild(el("td", "num", String(c.n)));
     tr.appendChild(el("td", "", c.title));
-    tr.appendChild(el("td", "", c.rule));
-    tr.appendChild(el("td", "", c.scope));
     for (const m of ov.months) {
-      const val = c.counts[m];
+      const val = c.values[m];
+      const mom = c.mom[m];
+      // Value cell
       if (val === null) {
         tr.appendChild(el("td", "num st-absent", "—"));
-      } else if (m === ov.months[0]) {
-        tr.appendChild(el("td", "num " + (val > 0 ? "flag-danger" : ""), String(val)));
       } else {
-        tr.appendChild(el("td", "num", String(val)));
+        tr.appendChild(el("td", "num " + (val > 0 ? "flag-danger" : ""), String(val)));
+      }
+      // MoM cell
+      const momData = c.mom[m];
+      if (momData === null || momData === undefined) {
+        tr.appendChild(el("td", "num st-absent", "—"));
+      } else {
+        const { delta, pct, trend } = momData;
+        const trendIcon = trend === "up" ? "▲" : (trend === "down" ? "▼" : "▬");
+        const trendClass = trend === "up" ? "trend-up" : (trend === "down" ? "trend-down" : "trend-flat");
+        const deltaStr = (delta > 0 ? "+" : "") + delta;
+        const pctStr = pct !== null ? " (" + (pct > 0 ? "+" : "") + pct + "%)" : "";
+        tr.appendChild(el("td", "num " + trendClass, trendIcon + " " + deltaStr + pctStr));
       }
     }
     tbody.appendChild(tr);

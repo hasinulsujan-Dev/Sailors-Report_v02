@@ -211,6 +211,9 @@ td.status { font-weight: 700; }
 td.st-late { color: var(--danger); }
 td.st-ok { color: var(--ok); }
 td.st-absent { color: var(--muted); }
+td.trend-up { color: var(--ok); font-weight: 700; }
+td.trend-down { color: var(--danger); font-weight: 700; }
+td.trend-flat { color: var(--muted); }
 
 .card {
   background: var(--panel);
